@@ -1,0 +1,5 @@
+[
+    {"name": "ADAM", "age": 46, "gender": "MALE"},
+    {"name": "DEREK", "age": 5, "gender": "MALE"},
+    {"friends": ["tom", "mary"]}
+]

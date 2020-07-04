@@ -1,0 +1,30 @@
+// 15/51
+
+package main
+
+import (
+	"fmt"
+	"net/http"
+	"os"
+
+	"github.com/labstack/echo"
+)
+
+func main(){
+	port := os.Getenv("MY_APP_PORT")
+	if port == "" {
+		port = "8080"
+	}
+	e := echo.New()
+	e.GET("/", func(c echo.Context) error {
+		return c.String(http.StatusOK, "Well, hello there !!! ")	
+	})
+	e.GET("/products", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, []string{"mobile", "tv", "oven"})
+	})
+	e.GET("/products/:vendor", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, c.QueryParam("olderThan"))
+	})
+	e.Logger.Print(fmt.Sprintf("Listening on port %s", port))
+	e.Logger.Fatal(e.Start(fmt.Sprintf("localhost:%s", port)))
+}

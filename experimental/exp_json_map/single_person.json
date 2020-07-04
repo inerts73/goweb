@@ -1,0 +1,6 @@
+{
+    "name": "ADAM",
+    "age": 46,
+    "gender": "MALE",
+    "friends": ["tom", "mary"]
+}
