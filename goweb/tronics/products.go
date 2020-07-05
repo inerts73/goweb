@@ -23,6 +23,7 @@ var products = []map[int]string{{1: "mobies"}, {2: "tv"}, {3: "laptops"}}
 
 func getProducts(c echo.Context) error {
 	fmt.Println("inside get products")
+	fmt.Printf("%+v", c.Request())
 	return c.JSON(http.StatusOK, products)
 }
 

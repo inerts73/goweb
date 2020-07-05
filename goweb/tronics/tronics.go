@@ -5,6 +5,7 @@ import (
 
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -22,6 +23,8 @@ func init() {
 func serverMessage(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		fmt.Println("inside middleware")
+		c.Request().URL.Path = "/krunal"
+		fmt.Printf("%+v\n", c.Request())
 		return next(c)
 	}
 }
@@ -31,13 +34,12 @@ func serverMessage(next echo.HandlerFunc) echo.HandlerFunc {
 
 //Start starts the application
 func Start() {
-	// e.Use(serverMessage)
-	// e.Pre(serverMessage)
+	e.Pre(middleware.RemoveTrailingSlash())
 	e.GET("/products", getProducts)
 	e.GET("products/:id", getProduct)
 	e.DELETE("products/:id", deleteProduct)
 	e.PUT("/product/:id", updateProduct)
-	e.POST("/products", createProduct)
+	e.POST("/products", createProduct, middleware.BodyLimit("1K"))
 
 	e.Logger.Print(fmt.Sprintf("Listening on port %s", cfg.Port))
 	e.Logger.Fatal(e.Start(fmt.Sprintf("localhost:%s", cfg.Port)))
