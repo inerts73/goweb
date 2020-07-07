@@ -1,4 +1,4 @@
-// 28/51
+// 29/51
 
 package main
 
@@ -16,11 +16,11 @@ import (
 
 //Product describes an electronic product e.g. phone
 type Product struct {
-	//ID			primitive.ObjectID `json:"_id" bson:"_id"`
+	ID			primitive.ObjectID `json:"_id" bson:"_id"`
 	Name 		string 	  		   `json:"product_name" bson:"product_name"`
 	Price 		int				   `json:"price" bson:"price"`	
 	Currency	string			   `json:"currency" bson:"currency"`
-	Quantity	string			   `json:"quantity" bson:"quantity"`
+	Quantity	int			   `json:"quantity" bson:"quantity"`
 	Discount 	int				   `json:"discount,omitempty" bson:"discount,omitempty"` 	
 	Vendor		string			   `json:"vendor" bson:"vendor"`
 	Accessories []string		   `json:"accessories,omitempty" bson:"accessories,omitempty"`
@@ -28,25 +28,36 @@ type Product struct {
 }
 
 var iphone10 = Product{
-	//ID:				primitive.NewObjectID(),
+	ID:				primitive.NewObjectID(),
 	Name:			"iphone10",
 	Price:			900,
 	Currency: 		"USD",
-	Quantity:   	"40",
+	Quantity:   	40,
 	Vendor:			"apple",
 	Accessories:	[]string{"charger", "headset", "slotopener"},
 	SkuID:			"1234",	
 }
 
 var trimmer = Product{
-	// ID:				primitive.NewObjectID(),
+	ID:				primitive.NewObjectID(),
 	Name:			"easy philips trimmer",
 	Price:			120,
 	Currency: 		"USD",
-	Quantity:   	"300",
+	Quantity:   	300,
 	Vendor:			"Philips",
 	Accessories:	[]string{"charger", "comb", "bladeset", "cleaning oil"},
 	SkuID:			"2345",	
+}
+
+var speaker = Product{
+	ID:				primitive.NewObjectID(),
+	Name:			"speaker",
+	Price:			300,
+	Currency: 		"USD",
+	Quantity:   	25,
+	Vendor:			"Bosch",
+	Accessories:	[]string{"cables", "remote"},
+	SkuID:			"4567",	
 }
 
 func main() {
@@ -63,20 +74,104 @@ func main() {
 	}
 	db := client.Database("tronics")
 	collection := db.Collection("products")
-	// res, err := collection.InsertOne(context.Background(), trimmer)
-	// res, err := collection.InsertOne(context.Background(), bson.D{
-	// 	{"name", "eric"},
-	// 	{"surname", "cartman"},
-	// 	{"hobbies", bson.A{"videogame", "alexa", "kfc"}},	
-	// })
-	res, err := collection.InsertOne(context.Background(), bson.M{
+	
+	// **** CREATE ****
+	
+	//Using structs
+	res, err := collection.InsertOne(context.Background(), trimmer)
+	fmt.Println("----- Insert One Using struct -----")
+	fmt.Println(res.InsertedID)
+
+	//Using bson.D
+	res, err = collection.InsertOne(context.Background(), bson.D{
+		{"name", "eric"},
+		{"surname", "cartman"},
+		{"hobbies", bson.A{"videogame", "alexa", "kfc"}},	
+	})
+	fmt.Println("----- Insert One Using bson.D -----")
+	fmt.Println(res.InsertedID)
+
+	//Using bson.M
+	res, err = collection.InsertOne(context.Background(), bson.M{
 		"name": "eric",
 		"surname": "cartman",
 		"hobbies": bson.A{"videogame", "alexa", "kfc"},	
 	})
+	fmt.Println("----- Insert One Using bson.M -----")
+	fmt.Println(res.InsertedID)
+
+	//Inserting Many documents
+	resMany, err := collection.InsertMany(context.Background(), []interface{}{iphone10, speaker})
+	fmt.Println("----- Insert Many -----")
+	fmt.Println(resMany.InsertedIDs)
+
+	// **** READ ****
+
+	// Equality operator using FindOne
+	var findOne Product
+	err = collection.FindOne(context.Background(), bson.M{"price": 900}).Decode(&findOne)
+	fmt.Println("----- Equality Operator using FindOne -----")
+	fmt.Println(findOne)
+
+	// Comparison operator using Find
+	var find Product
+	fmt.Println("----- Comparison operator using Find -----")
+	findCursor, err := collection.Find(context.Background(), bson.M{"price": bson.M{"$gt": 100}})
+	for findCursor.Next(context.Background()) {
+		err := findCursor.Decode(&find)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(find.Name)
+	}
+
+	// Logical operator using Find
+	var findLogic Product
+	logicFilter := bson.M{
+		"$and": bson.A{
+			bson.M{"price": bson.M{"$gt": 100}},
+			bson.M{"quantity": bson.M{"$gt": 30}},
+		},
+	}
+	fmt.Println("----- Logical operator using Find -----")
+	findLogicRes, err := collection.Find(context.Background(), logicFilter)
+	for findLogicRes.Next(context.Background()) {
+		err := findLogicRes.Decode(&findLogic)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(findLogic.Name)
+	}	
+
+	// Element operator using Find
+	var findElement Product
+	elementFilter := bson.M{
+		"accessories": bson.M{"$exists": true},
+	}
+	fmt.Println("----- Element operator using Find -----")
+	findElementRes, err := collection.Find(context.Background(), elementFilter)
+	for findElementRes.Next(context.Background()) {
+		err := findElementRes.Decode(&findElement)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(findElement.Name)
+	}	
+
+	// Array operator using Find
+	var findArray Product
+	arrayFilter := bson.M{"accessories": bson.M{"$all": bson.A{"charger"}}}
+	fmt.Println("----- Array operator using Find -----")
+	findArrayRes, err := collection.Find(context.Background(), arrayFilter)
+	for findArrayRes.Next(context.Background()) {
+		err := findArrayRes.Decode(&findArray)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(findArray.Name)
+	}	
 
 	if err != nil {
 		fmt.Println(err)	
 	}
-	fmt.Println(res.InsertedID.(primitive.ObjectID).Timestamp())
 }
